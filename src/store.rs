@@ -89,7 +89,10 @@ impl ColorEventStore {
 
 #[cfg(test)]
 mod test {
-    use crate::{color::Color, envelope::Envelope};
+    use crate::{
+        color::Color,
+        envelope::{Envelope, EnvelopeParameters},
+    };
 
     use super::*;
 
@@ -116,12 +119,12 @@ mod test {
     }
 
     fn envelope() -> Envelope {
-        Envelope {
+        Envelope::new(EnvelopeParameters {
             attack: Duration::from_secs(1),
             attack_level: UnipolarFloat::ZERO,
             decay: Duration::from_secs(1),
             sustain_level: UnipolarFloat::new(0.5),
             release: Duration::from_secs(1),
-        }
+        })
     }
 }

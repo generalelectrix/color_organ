@@ -5,14 +5,13 @@ use std::time::{Duration, Instant};
 
 use crate::{
     color::Color,
-    envelope::{Envelope, EnvelopeState},
+    envelope::{Envelope, Envelope},
 };
 
 /// A color, shaped by an envelope, including envelope evolution state.
 pub struct ColorEvent {
     pub color: Color,
     pub envelope: Envelope,
-    pub state: EnvelopeState,
     pub release_id: ReleaseID,
 }
 
@@ -22,7 +21,6 @@ impl ColorEvent {
             color,
             envelope,
             release_id,
-            state: EnvelopeState::new(),
         }
     }
 }
