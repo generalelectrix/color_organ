@@ -9,18 +9,31 @@ fn main() {
 }
 
 /// The parameters of an ADSR envelope.
+/// TODO: do we want to store these parameters as durations, or as fractions of
+/// a time scale?
 pub struct Envelope {
-    attack: Duration,
-    attack_level: UnipolarFloat,
-    decay: Duration,
-    sustain_level: UnipolarFloat,
-    release: Duration,
+    pub attack: Duration,
+    pub attack_level: UnipolarFloat,
+    pub decay: Duration,
+    pub sustain_level: UnipolarFloat,
+    pub release: Duration,
 }
 
 /// The state information for an envelope as it evolves.
 pub struct EnvelopeState {
     start: Instant,
     released: bool,
+}
+
+impl EnvelopeState {
+    pub fn new() -> Self {
+        Self {
+            // TODO: should we initialize this time here, or closer to whenvever
+            // we first received the triggering event?
+            start: Instant::now(),
+            released: false,
+        }
+    }
 }
 
 pub struct Color {}
@@ -31,6 +44,17 @@ pub struct ColorEvent {
     envelope: Envelope,
     state: EnvelopeState,
     release_id: ReleaseID,
+}
+
+impl ColorEvent {
+    pub fn new(color: Color, envelope: Envelope, release_id: ReleaseID) -> Self {
+        Self {
+            color,
+            envelope,
+            release_id,
+            state: EnvelopeState::new(),
+        }
+    }
 }
 
 /// An identifier given to a color event to tie a subsequent off event to
@@ -57,13 +81,18 @@ struct ActiveColorEvent {
 pub struct ColorEventStore(Vec<Option<ActiveColorEvent>>);
 
 impl ColorEventStore {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self(Vec::new())
+    }
+
+    /// Return the number of active events.
+    pub fn active_event_count(&self) -> usize {
+        self.0.iter().filter(|slot| slot.is_some()).count()
     }
 
     /// Add an event to the store.
     /// Return the ID of the stored event.
-    fn add(&mut self, event: ColorEvent, listener_count: usize) -> ColorEventID {
+    pub fn add(&mut self, event: ColorEvent, listener_count: usize) -> ColorEventID {
         let active_event = ActiveColorEvent {
             event,
             listener_count,
@@ -82,7 +111,7 @@ impl ColorEventStore {
 
     /// Decrement the listener count of the specified ID.
     /// If the listener count hits 0, clear the slot.
-    fn unlisten(&mut self, event_id: ColorEventID) {
+    pub fn unlisten(&mut self, event_id: ColorEventID) {
         match &mut self.0[event_id.0] {
             None => {
                 error!("unlisten on empty slot ID {}", event_id.0);
@@ -94,6 +123,33 @@ impl ColorEventStore {
                     self.0[event_id.0] = None
                 }
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_color_event_store() {
+        let mut store = ColorEventStore::new();
+        assert_eq!(0, store.active_event_count());
+        let release_id = 0;
+        let event = ColorEvent::new(Color {}, test_envelope(), release_id);
+        let event_id = store.add(event, 1);
+        assert_eq!(1, store.active_event_count());
+        store.unlisten(event_id);
+        assert_eq!(0, store.active_event_count());
+    }
+
+    fn test_envelope() -> Envelope {
+        Envelope {
+            attack: Duration::from_secs(1),
+            attack_level: UnipolarFloat::ZERO,
+            decay: Duration::from_secs(1),
+            sustain_level: UnipolarFloat::new(0.5),
+            release: Duration::from_secs(1),
         }
     }
 }
