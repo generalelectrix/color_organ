@@ -82,8 +82,7 @@ impl ColorEventStore {
         self.0
             .iter_mut()
             .filter_map(|slot| slot.as_mut())
-            .filter(|stored| stored.event.release_id == release_id)
-            .for_each(|stored| stored.event.envelope.release());
+            .for_each(|stored| stored.event.release(release_id));
     }
 }
 
@@ -116,8 +115,8 @@ mod test {
         let event_0 = store.add(ColorEvent::new(color(), envelope(), 0), 1);
         let event_1 = store.add(ColorEvent::new(color(), envelope(), 1), 1);
         store.release(0);
-        assert!(store.get(event_0).unwrap().envelope.released());
-        assert!(!store.get(event_1).unwrap().envelope.released());
+        assert!(store.get(event_0).unwrap().released());
+        assert!(!store.get(event_1).unwrap().released());
     }
 
     fn envelope() -> Envelope {

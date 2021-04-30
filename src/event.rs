@@ -2,9 +2,9 @@ use crate::{color::Color, envelope::Envelope};
 
 /// A color, shaped by an envelope, including envelope evolution state.
 pub struct ColorEvent {
-    pub color: Color,
-    pub envelope: Envelope,
-    pub release_id: ReleaseID,
+    color: Color,
+    envelope: Envelope,
+    release_id: ReleaseID,
 }
 
 impl ColorEvent {
@@ -14,6 +14,18 @@ impl ColorEvent {
             envelope,
             release_id,
         }
+    }
+
+    /// Release the envelope in this event if the release ID matches the provided one.
+    pub fn release(&mut self, release_id: ReleaseID) {
+        if self.release_id == release_id {
+            self.envelope.release();
+        }
+    }
+
+    /// Return true if the envelope in this event is released.
+    pub fn released(&self) -> bool {
+        self.envelope.released()
     }
 }
 
