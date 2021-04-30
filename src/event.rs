@@ -1,12 +1,4 @@
-use derive_more::Display;
-use log::error;
-use number::UnipolarFloat;
-use std::time::{Duration, Instant};
-
-use crate::{
-    color::Color,
-    envelope::{Envelope, Envelope},
-};
+use crate::{color::Color, envelope::Envelope};
 
 /// A color, shaped by an envelope, including envelope evolution state.
 pub struct ColorEvent {

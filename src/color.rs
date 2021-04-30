@@ -16,7 +16,7 @@ pub struct HsvColor {
 
 impl HsvColor {
     pub fn enveloped(&self, envelope: UnipolarFloat) -> Self {
-        let copy = self.clone();
+        let mut copy = self.clone();
         copy.value *= envelope;
         copy
     }

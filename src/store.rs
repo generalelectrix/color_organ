@@ -83,15 +83,17 @@ impl ColorEventStore {
             .iter_mut()
             .filter_map(|slot| slot.as_mut())
             .filter(|stored| stored.event.release_id == release_id)
-            .for_each(|stored| stored.event.state.release());
+            .for_each(|stored| stored.event.envelope.release());
     }
 }
 
 #[cfg(test)]
 mod test {
+    use number::Phase;
+
     use crate::{
-        color::Color,
-        envelope::{Envelope, EnvelopeParameters},
+        color::{Color, HsvColor},
+        envelope::{linear_edge, Envelope, EnvelopeParameters},
     };
 
     use super::*;
@@ -101,7 +103,7 @@ mod test {
         let mut store = ColorEventStore::new();
         assert_eq!(0, store.active_event_count());
         let release_id = 0;
-        let event = ColorEvent::new(Color {}, envelope(), release_id);
+        let event = ColorEvent::new(color(), envelope(), release_id);
         let event_id = store.add(event, 1);
         assert_eq!(1, store.active_event_count());
         store.unlisten(event_id);
@@ -111,20 +113,31 @@ mod test {
     #[test]
     fn test_release() {
         let mut store = ColorEventStore::new();
-        let event_0 = store.add(ColorEvent::new(Color {}, envelope(), 0), 1);
-        let event_1 = store.add(ColorEvent::new(Color {}, envelope(), 1), 1);
+        let event_0 = store.add(ColorEvent::new(color(), envelope(), 0), 1);
+        let event_1 = store.add(ColorEvent::new(color(), envelope(), 1), 1);
         store.release(0);
-        assert!(store.get(event_0).unwrap().state.released());
-        assert!(!store.get(event_1).unwrap().state.released());
+        assert!(store.get(event_0).unwrap().envelope.released());
+        assert!(!store.get(event_1).unwrap().envelope.released());
     }
 
     fn envelope() -> Envelope {
         Envelope::new(EnvelopeParameters {
             attack: Duration::from_secs(1),
+            attack_shape: linear_edge,
             attack_level: UnipolarFloat::ZERO,
             decay: Duration::from_secs(1),
+            decay_shape: linear_edge,
             sustain_level: UnipolarFloat::new(0.5),
             release: Duration::from_secs(1),
+            release_shape: linear_edge,
+        })
+    }
+
+    fn color() -> Color {
+        Color::Hsv(HsvColor {
+            hue: Phase::ZERO,
+            saturation: UnipolarFloat::ONE,
+            value: UnipolarFloat::ONE,
         })
     }
 }
