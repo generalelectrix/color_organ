@@ -18,6 +18,7 @@ pub fn linear_edge(alpha: UnipolarFloat) -> UnipolarFloat {
 /// The parameters of an ADSR envelope.
 /// TODO: do we want to store these parameters as durations, or as fractions of
 /// a time scale?
+#[derive(Clone)]
 pub struct EnvelopeParameters {
     pub attack: Duration,
     pub attack_level: UnipolarFloat,
@@ -27,6 +28,28 @@ pub struct EnvelopeParameters {
     pub sustain_level: UnipolarFloat,
     pub release: Duration,
     pub release_shape: EdgeShape,
+}
+
+impl EnvelopeParameters {
+    /// Return envelope parameters with linear edges.
+    pub fn linear(
+        attack: Duration,
+        attack_level: UnipolarFloat,
+        decay: Duration,
+        sustain_level: UnipolarFloat,
+        release: Duration,
+    ) -> Self {
+        Self {
+            attack,
+            attack_level,
+            attack_shape: linear_edge,
+            decay,
+            decay_shape: linear_edge,
+            sustain_level,
+            release,
+            release_shape: linear_edge,
+        }
+    }
 }
 
 /// An evolving ADSR envelope.
@@ -43,14 +66,16 @@ pub struct Envelope {
 
 impl Envelope {
     pub fn new(parameters: EnvelopeParameters) -> Self {
-        Self {
-            // Initialize value at the attack level.
-            value: Some(parameters.attack_level),
+        let mut envelope = Self {
+            value: None,
             parameters,
             elapsed: Duration::from_secs(0),
             released: false,
             release_elapsed: Duration::from_secs(0),
-        }
+        };
+        // Initialize value.
+        envelope.value = envelope.current_value();
+        envelope
     }
 
     /// Return true if this envelope is released.
@@ -153,4 +178,157 @@ fn rising_edge(shape: EdgeShape, alpha: UnipolarFloat, offset: UnipolarFloat) ->
 fn falling_edge(shape: EdgeShape, alpha: UnipolarFloat, offset: UnipolarFloat) -> UnipolarFloat {
     // Create a falling edge by inverting alpha, essentially running the edge backwards.
     rising_edge(shape, UnipolarFloat::ONE - alpha, offset)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    /// Return basic envelope paramters for testing.
+    fn params() -> EnvelopeParameters {
+        EnvelopeParameters::linear(
+            Duration::from_secs(1),
+            UnipolarFloat::new(0.4),
+            Duration::from_secs(1),
+            UnipolarFloat::new(0.6),
+            Duration::from_secs(1),
+        )
+    }
+
+    #[test]
+    /// Basic test of envelope shape.
+    fn test_full_shape() {
+        let params = params();
+        let mut envelope = Envelope::new(params.clone());
+        assert_eq!(Some(params.attack_level), envelope.value());
+
+        // Evolve for half of the attack.
+        envelope.update_state(Duration::from_millis(500));
+        assert_eq!(Some(UnipolarFloat::new(0.7)), envelope.value());
+
+        // Complete attack.
+        envelope.update_state(Duration::from_millis(500));
+        assert_eq!(Some(UnipolarFloat::ONE), envelope.value());
+
+        // Half of decay.
+        envelope.update_state(Duration::from_millis(500));
+        assert_eq!(Some(UnipolarFloat::new(0.8)), envelope.value());
+
+        // Complete decay.
+        envelope.update_state(Duration::from_millis(500));
+        assert_eq!(Some(params.sustain_level), envelope.value());
+
+        // Nigel: The sustain... look at it...
+        envelope.update_state(Duration::from_secs(1));
+        assert_eq!(Some(params.sustain_level), envelope.value());
+        // Marty: I'm not seeing anything.
+        // Nigel: You would, though, if it were playing, because it really...
+        // it's famous for its sustain... I mean, you could, just, hold it...
+        envelope.update_state(Duration::from_secs(1));
+        assert_eq!(Some(params.sustain_level), envelope.value());
+        // bluuuuuuuuuuuuuuuuuuu... you could go and have a bite an'
+        envelope.update_state(Duration::from_secs(1000));
+        assert_eq!(Some(params.sustain_level), envelope.value());
+        // ...uuuuuuuuuuu... you'd still be seein' that one.
+
+        // Release.
+        envelope.release();
+        assert_eq!(Some(params.sustain_level), envelope.value());
+
+        envelope.update_state(Duration::from_millis(500));
+        assert_eq!(Some(UnipolarFloat::new(0.3)), envelope.value());
+
+        // Complete release and confirm that envelope closes.
+        envelope.update_state(Duration::from_millis(500));
+        assert_eq!(None, envelope.value());
+    }
+
+    #[test]
+    /// Test zero-attack envelope.
+    fn test_zero_attack() {
+        let mut params = params();
+        params.attack = Duration::from_secs(0);
+        let mut envelope = Envelope::new(params);
+        assert_eq!(Some(UnipolarFloat::ONE), envelope.value());
+
+        // Check expected decay.
+        envelope.update_state(Duration::from_millis(500));
+        assert_eq!(Some(UnipolarFloat::new(0.8)), envelope.value());
+    }
+
+    #[test]
+    /// Test zero-decay envelope.
+    fn test_zero_decay() {
+        let mut params = params();
+        params.decay = Duration::from_secs(0);
+        let mut envelope = Envelope::new(params.clone());
+        envelope.update_state(params.attack);
+        assert_eq!(Some(UnipolarFloat::ONE), envelope.value());
+
+        // Should immediately fall to sustain level.
+        envelope.update_state(Duration::from_nanos(1));
+        assert_eq!(Some(params.sustain_level), envelope.value());
+    }
+
+    #[test]
+    /// Test zero-release envelope.
+    fn test_zero_release() {
+        let mut params = params();
+        params.release = Duration::from_secs(0);
+        let mut envelope = Envelope::new(params.clone());
+        envelope.update_state(params.attack + params.decay);
+        assert_eq!(Some(params.sustain_level), envelope.value());
+
+        // nudge just past the decay into sustain.
+        envelope.update_state(Duration::from_nanos(1));
+        assert_eq!(Some(params.sustain_level), envelope.value());
+
+        envelope.release();
+        // Since release is a step-change in state, even a zero-duration state
+        // update should force the envelope to close due to zero release.
+        envelope.update_state(Duration::from_secs(0));
+        assert_eq!(None, envelope.value());
+    }
+
+    #[test]
+    /// Test zero-sustain envelope.
+    fn test_zero_sustain() {
+        let mut params = params();
+        params.sustain_level = UnipolarFloat::ZERO;
+        let mut envelope = Envelope::new(params.clone());
+        envelope.update_state(params.attack);
+        assert_eq!(Some(UnipolarFloat::ONE), envelope.value());
+
+        envelope.update_state(Duration::from_millis(500));
+        assert_eq!(Some(UnipolarFloat::new(0.5)), envelope.value());
+
+        // Complete decay - envelope should not close until next update since we
+        // are still on the trailing edge of decay.
+        envelope.update_state(Duration::from_millis(500));
+        assert_eq!(Some(UnipolarFloat::ZERO), envelope.value());
+
+        // Any further evolution should close the envelope.
+        envelope.update_state(Duration::from_nanos(1));
+        assert_eq!(None, envelope.value());
+    }
+
+    #[test]
+    /// Test weird edge case - the all-zero timing envelope.
+    /// This envelope should start at full scale, then jump immediately
+    /// to the sustain level, then close immediately when released.
+    fn test_all_zero_envelope() {
+        let mut params = params();
+        params.attack = Duration::from_secs(0);
+        params.decay = Duration::from_secs(0);
+        params.release = Duration::from_secs(0);
+        let mut envelope = Envelope::new(params.clone());
+        assert_eq!(Some(UnipolarFloat::ONE), envelope.value());
+
+        envelope.update_state(Duration::from_nanos(1));
+        assert_eq!(Some(params.sustain_level), envelope.value());
+
+        envelope.release();
+        envelope.update_state(Duration::from_secs(0));
+        assert_eq!(None, envelope.value());
+    }
 }

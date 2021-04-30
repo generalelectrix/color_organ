@@ -93,7 +93,7 @@ mod test {
 
     use crate::{
         color::{Color, HsvColor},
-        envelope::{linear_edge, Envelope, EnvelopeParameters},
+        envelope::{Envelope, EnvelopeParameters},
     };
 
     use super::*;
@@ -121,16 +121,13 @@ mod test {
     }
 
     fn envelope() -> Envelope {
-        Envelope::new(EnvelopeParameters {
-            attack: Duration::from_secs(1),
-            attack_shape: linear_edge,
-            attack_level: UnipolarFloat::ZERO,
-            decay: Duration::from_secs(1),
-            decay_shape: linear_edge,
-            sustain_level: UnipolarFloat::new(0.5),
-            release: Duration::from_secs(1),
-            release_shape: linear_edge,
-        })
+        Envelope::new(EnvelopeParameters::linear(
+            Duration::from_secs(1),
+            UnipolarFloat::ZERO,
+            Duration::from_secs(1),
+            UnipolarFloat::new(0.5),
+            Duration::from_secs(1),
+        ))
     }
 
     fn color() -> Color {
