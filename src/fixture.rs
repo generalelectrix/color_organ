@@ -3,6 +3,7 @@
 use std::collections::VecDeque;
 
 use log::error;
+use number::UnipolarFloat;
 
 use crate::{
     color::Color,
@@ -47,20 +48,29 @@ impl<C: Color> Fixture<C> {
 
         // If we're down to one event in the buffer and it is complete, drop it.
         if self.event_buffer.len() == 1 {
-            if self.event_buffer[0].borrow().value().is_none() {
+            if self.event_buffer[0].borrow().envelope().closed() {
                 self.event_buffer.clear();
             }
         }
     }
 
-    /// Render the current color for this fixture.
+    /// Return the current color for this fixture.
     pub fn render(&self) -> C {
-        if self.event_buffer.len() > 1 {
-            unimplemented!("TODO: implement multi-event interpolation");
-        }
-        match self.event_buffer.front() {
-            None => C::BLACK,
-            Some(e) => e.borrow().value().map(Clone::clone).unwrap_or(C::BLACK),
-        }
+        // Fold backwards over all events in the buffer, interpolating each pair
+        // of colors.
+        self.event_buffer
+            .iter()
+            .rev()
+            .fold(None, |color_accum, event| match color_accum {
+                None => Some(event.borrow().value().clone()),
+                Some(color) => {
+                    let e = event.borrow();
+                    Some(e.value().weighted_interpolation(
+                        &color,
+                        e.envelope().value().unwrap_or(UnipolarFloat::ZERO),
+                    ))
+                }
+            })
+            .unwrap_or(C::BLACK)
     }
 }

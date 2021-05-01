@@ -87,6 +87,11 @@ impl Envelope {
         self.released = true;
     }
 
+    /// Return true if this envelope has closed.
+    pub fn closed(&self) -> bool {
+        self.value.is_none()
+    }
+
     /// Get the current value of this envelope.
     /// Return None if the envelope has closed.
     pub fn value(&self) -> Option<UnipolarFloat> {

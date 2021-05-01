@@ -10,9 +10,11 @@ pub trait Color: Sized + Clone {
 
     fn with_envelope(&self, envelope: UnipolarFloat) -> Self;
 
-    /// Return the enveloped color, or None if the envelope has closed.
-    fn enveloped(&self, envelope: Option<UnipolarFloat>) -> Option<Self> {
-        envelope.map(|e| self.with_envelope(e))
+    /// Return the color with the given envelope applied.
+    fn enveloped(&self, envelope: Option<UnipolarFloat>) -> Self {
+        envelope
+            .map(|e| self.with_envelope(e))
+            .unwrap_or(Self::BLACK)
     }
 
     /// Perform a weighted interpolation with other color.

@@ -11,8 +11,7 @@ pub struct ColorEvent<C: Color> {
     envelope: Envelope,
     release_id: ReleaseID,
     /// The current enveloped color.
-    /// If the envelope has closed, None.
-    value: Option<C>,
+    value: C,
 }
 
 impl<C: Color> ColorEvent<C> {
@@ -21,7 +20,7 @@ impl<C: Color> ColorEvent<C> {
             color,
             envelope,
             release_id,
-            value: None,
+            value: C::BLACK,
         };
         event.update_value();
         event
@@ -47,8 +46,8 @@ impl<C: Color> ColorEvent<C> {
     }
 
     /// Return the current value of this event.
-    pub fn value(&self) -> Option<&C> {
-        self.value.as_ref()
+    pub fn value(&self) -> &C {
+        &self.value
     }
 
     /// Return an immutable reference to the envelope.
