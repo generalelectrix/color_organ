@@ -50,13 +50,13 @@ mod test {
     use number::Phase;
 
     use crate::{
-        color::{Color, HsvColor},
+        color::{Color, HsluvColor},
         envelope::{Envelope, EnvelopeParameters},
     };
 
     use super::*;
 
-    fn mkevent(release_id: ReleaseID) -> ColorEventStrong<HsvColor> {
+    fn mkevent(release_id: ReleaseID) -> ColorEventStrong<HsluvColor> {
         Rc::new(RefCell::new(ColorEvent::new(
             color(),
             envelope(),
@@ -72,8 +72,8 @@ mod test {
         store.add(&event_0);
         store.add(&event_1);
         store.release(0);
-        assert!(event_0.borrow().released());
-        assert!(!event_1.borrow().released());
+        assert!(event_0.borrow().envelope().released());
+        assert!(!event_1.borrow().envelope().released());
     }
 
     fn envelope() -> Envelope {
@@ -86,11 +86,7 @@ mod test {
         ))
     }
 
-    fn color() -> HsvColor {
-        HsvColor {
-            hue: Phase::ZERO,
-            saturation: UnipolarFloat::ONE,
-            value: UnipolarFloat::ONE,
-        }
+    fn color() -> HsluvColor {
+        HsluvColor::new(Phase::ZERO, UnipolarFloat::ONE, UnipolarFloat::ONE)
     }
 }

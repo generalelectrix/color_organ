@@ -34,9 +34,23 @@ impl<C: Color> Fixture<C> {
     /// Update the state of this fixture's event buffer.
     /// Drop all events that the fixture is no longer responding to.
     pub fn update_state(&mut self) {
-        // Work forwards through the buffer.  For each pair of events, if the
-        // newer event has completed its attack, the older event is no longer
-        // relevant, and can be dropped.
+        // If an event has completed its attack, all older events are no longer relevant.
+        // Iterate through the events, and as soon as we find one with a complete
+        // attack, discard the rest.
+        if let Some(newest_complete) = self
+            .event_buffer
+            .iter()
+            .position(|e| e.borrow().envelope().attack_complete())
+        {
+            self.event_buffer.truncate(newest_complete + 1);
+        }
+
+        // If we're down to one event in the buffer and it is complete, drop it.
+        if self.event_buffer.len() == 1 {
+            if self.event_buffer[0].borrow().value().is_none() {
+                self.event_buffer.clear();
+            }
+        }
     }
 
     /// Render the current color for this fixture.

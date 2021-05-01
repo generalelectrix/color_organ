@@ -9,7 +9,6 @@ use std::time::{Duration, Instant};
 /// to create falling edges.
 type EdgeShape = fn(UnipolarFloat) -> UnipolarFloat;
 
-#[inline(always)]
 /// A linear edge function.
 pub fn linear_edge(alpha: UnipolarFloat) -> UnipolarFloat {
     alpha
@@ -74,7 +73,7 @@ impl Envelope {
             release_elapsed: Duration::from_secs(0),
         };
         // Initialize value.
-        envelope.value = envelope.current_value();
+        envelope.update_value();
         envelope
     }
 
@@ -104,68 +103,71 @@ impl Envelope {
         if self.released {
             self.release_elapsed += delta_t;
         }
-        self.value = self.current_value();
+        self.update_value();
+    }
+    /// Return true if this envelope has completed the attack.
+    pub fn attack_complete(&self) -> bool {
+        self.elapsed > self.parameters.attack
     }
 
-    /// Return the fraction of the attack that has already been completed.
-    /// Return 1 if the attack is complete.
-    pub fn attack_fraction(&self) -> UnipolarFloat {
-        if self.parameters.attack == Duration::from_secs(0) {
-            return UnipolarFloat::ONE;
-        }
-        UnipolarFloat::new(self.elapsed.as_secs_f64() / self.parameters.attack.as_secs_f64())
-    }
-
-    /// Compute the current value of this envelope.
-    /// Return None if the envelope has closed.
-    fn current_value(&self) -> Option<UnipolarFloat> {
-        // attack portion
-        if self.elapsed <= self.parameters.attack {
-            let alpha = self.attack_fraction();
-            return Some(rising_edge(
+    /// Update the current stored value of this envelope.
+    /// Set None if the envelope has closed.
+    fn update_value(&mut self) {
+        self.value = if self.elapsed <= self.parameters.attack {
+            // attack portion
+            let alpha = if self.parameters.attack == Duration::from_secs(0) {
+                UnipolarFloat::ONE
+            } else {
+                UnipolarFloat::new(
+                    self.elapsed.as_secs_f64() / self.parameters.attack.as_secs_f64(),
+                )
+            };
+            Some(rising_edge(
                 self.parameters.attack_shape,
                 alpha,
                 self.parameters.attack_level,
-            ));
+            ))
         }
         // decay portion
-        if self.elapsed <= self.parameters.attack + self.parameters.decay {
+        else if self.elapsed <= self.parameters.attack + self.parameters.decay {
             // if decay is 0, we take the attack branch of this function so we
             // do not need to treat decay of 0 explicitly here.
             let decay_elapsed = self.elapsed - self.parameters.attack;
             let alpha = UnipolarFloat::new(
                 decay_elapsed.as_secs_f64() / self.parameters.decay.as_secs_f64(),
             );
-            return Some(falling_edge(
+            Some(falling_edge(
                 self.parameters.decay_shape,
                 alpha,
                 self.parameters.sustain_level,
-            ));
+            ))
         }
         // attack and decay are complete, either sustain or release
 
         // if sustain level is 0, the envelope has closed.
-        if self.parameters.sustain_level == UnipolarFloat::ZERO {
-            return None;
+        else if self.parameters.sustain_level == UnipolarFloat::ZERO {
+            None
         }
-
         // if not released, holding the sustain level
-        if !self.released {
-            return Some(self.parameters.sustain_level);
+        else if !self.released {
+            Some(self.parameters.sustain_level)
         }
-
         // releasing
-        if self.release_elapsed >= self.parameters.release {
-            // Release complete, envelope is closed.
-            return None;
+
+        // Release complete, envelope is closed.
+        else if self.release_elapsed >= self.parameters.release {
+            None
         }
-        let alpha = UnipolarFloat::new(
-            self.release_elapsed.as_secs_f64() / self.parameters.release.as_secs_f64(),
-        );
-        Some(
-            self.parameters.sustain_level
-                * falling_edge(self.parameters.release_shape, alpha, UnipolarFloat::ZERO),
-        )
+        // Releasing
+        else {
+            let alpha = UnipolarFloat::new(
+                self.release_elapsed.as_secs_f64() / self.parameters.release.as_secs_f64(),
+            );
+            Some(
+                self.parameters.sustain_level
+                    * falling_edge(self.parameters.release_shape, alpha, UnipolarFloat::ZERO),
+            )
+        };
     }
 }
 

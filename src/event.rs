@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use number::UnipolarFloat;
+
 use crate::{color::Color, envelope::Envelope};
 
 /// A color, shaped by an envelope, including envelope evolution state.
@@ -21,7 +23,7 @@ impl<C: Color> ColorEvent<C> {
             release_id,
             value: None,
         };
-        event.value = event.current_value();
+        event.update_value();
         event
     }
 
@@ -32,30 +34,26 @@ impl<C: Color> ColorEvent<C> {
         }
     }
 
-    /// Return true if the envelope in this event is released.
-    pub fn released(&self) -> bool {
-        self.envelope.released()
-    }
-
-    /// Return true if the envelope in this event is closed.
-    pub fn closed(&self) -> bool {
-        self.envelope.value().is_none()
-    }
-
     /// Update the state of this color event.
     pub fn update_state(&mut self, delta_t: Duration) {
         self.envelope.update_state(delta_t);
-        self.value = self.current_value();
+        self.update_value();
     }
 
-    /// Return the current color of this event using the current envelope value.
-    fn current_value(&self) -> Option<C> {
-        self.color.enveloped(self.envelope.value())
+    /// Update the current color of this event using the current envelope value.
+    /// Set None if the envelope has closed.
+    fn update_value(&mut self) {
+        self.value = self.color.enveloped(self.envelope.value());
     }
 
     /// Return the current value of this event.
     pub fn value(&self) -> Option<&C> {
         self.value.as_ref()
+    }
+
+    /// Return an immutable reference to the envelope.
+    pub fn envelope(&self) -> &Envelope {
+        &self.envelope
     }
 }
 
