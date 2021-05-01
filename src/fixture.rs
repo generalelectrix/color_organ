@@ -1,14 +1,9 @@
 //! Models for fixtures that can receieve color events.
 
+use number::UnipolarFloat;
 use std::collections::VecDeque;
 
-use log::error;
-use number::UnipolarFloat;
-
-use crate::{
-    color::Color,
-    store::{ColorEventStore, ColorEventStrong},
-};
+use crate::{color::Color, store::ColorEventStrong};
 
 /// A fixture that can receive color organ events.
 /// Stores a buffer or color events it is listening to, and knows how to
