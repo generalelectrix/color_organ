@@ -3,6 +3,7 @@ use std::{collections::btree_set::Union, time::Duration};
 use number::UnipolarFloat;
 
 use crate::envelope::EnvelopeParameters;
+use crate::organ::{EmitStateChange as EmitOrganStateChange, StateChange as OrganStateChange};
 
 /// Generate envelope parameters based on higher-level controls.
 /// TODO: envelope shape controls, linear defaults now.
@@ -88,4 +89,10 @@ pub enum StateChange {
 
 pub trait EmitStateChange {
     fn emit_envelope_generator_state_change(&mut self, sc: StateChange);
+}
+
+impl<T: EmitOrganStateChange> EmitStateChange for T {
+    fn emit_envelope_generator_state_change(&mut self, sc: StateChange) {
+        self.emit_state_change(OrganStateChange::Envelope(sc));
+    }
 }

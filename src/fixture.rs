@@ -6,7 +6,7 @@ use std::collections::VecDeque;
 use crate::{color::Color, store::ColorEventStrong};
 
 /// A fixture that can receive color organ events.
-/// Stores a buffer or color events it is listening to, and knows how to
+/// Stores a buffer of color events it is listening to, and knows how to
 /// interpolate between them if multiple events are present.
 pub struct Fixture<C: Color> {
     name: String,
@@ -24,12 +24,16 @@ impl<C: Color> Fixture<C> {
     }
 
     pub fn add_event(&mut self, event: ColorEventStrong<C>) {
-        self.event_buffer.push_back(event);
+        self.event_buffer.push_front(event);
     }
 
     /// Update the state of this fixture's event buffer.
     /// Drop all events that the fixture is no longer responding to.
     pub fn update_state(&mut self) {
+        // Short-circuit if the event buffer is empty.
+        if self.event_buffer.len() == 0 {
+            return;
+        }
         // If an event has completed its attack, all older events are no longer relevant.
         // Iterate through the events, and as soon as we find one with a complete
         // attack, discard the rest.
@@ -50,7 +54,7 @@ impl<C: Color> Fixture<C> {
     /// Return the current color for this fixture.
     pub fn render(&self) -> C {
         // Fold backwards over all events in the buffer, interpolating each pair
-        // of colors.
+        // of color events from the oldest to the newest.
         self.event_buffer
             .iter()
             .rev()

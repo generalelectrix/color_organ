@@ -1,8 +1,11 @@
+mod bank;
 mod color;
 mod envelope;
 mod envelope_gen;
 mod event;
 mod fixture;
+mod organ;
+mod patch;
 mod store;
 
 use std::{thread::sleep, time::Duration};
