@@ -1,5 +1,6 @@
 mod color;
 mod envelope;
+mod envelope_gen;
 mod event;
 mod fixture;
 mod store;

@@ -42,10 +42,8 @@ impl<C: Color> Fixture<C> {
         }
 
         // If we're down to one event in the buffer and it is complete, drop it.
-        if self.event_buffer.len() == 1 {
-            if self.event_buffer[0].borrow().envelope().closed() {
-                self.event_buffer.clear();
-            }
+        if self.event_buffer.len() == 1 && self.event_buffer[0].borrow().envelope().closed() {
+            self.event_buffer.clear();
         }
     }
 
