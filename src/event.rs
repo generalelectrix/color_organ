@@ -40,7 +40,6 @@ impl<C: Color> ColorEvent<C> {
     }
 
     /// Update the current color of this event using the current envelope value.
-    /// Set None if the envelope has closed.
     fn update_value(&mut self) {
         self.value = self.color.enveloped(self.envelope.value());
     }

@@ -9,16 +9,14 @@ use crate::{color::Color, store::ColorEventStrong};
 /// Stores a buffer of color events it is listening to, and knows how to
 /// interpolate between them if multiple events are present.
 pub struct Fixture<C: Color> {
-    name: String,
     /// FIFO buffer of color events.  Newer events will evict older events after
     /// an interpolated transition.
     event_buffer: VecDeque<ColorEventStrong<C>>,
 }
 
 impl<C: Color> Fixture<C> {
-    pub fn new<N: Into<String>>(name: N) -> Self {
+    pub fn new() -> Self {
         Self {
-            name: name.into(),
             event_buffer: VecDeque::new(),
         }
     }

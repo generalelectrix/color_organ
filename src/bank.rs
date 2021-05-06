@@ -1,5 +1,6 @@
 use crate::patch::FixtureId;
 
+use number::UnipolarFloat;
 use serde::{Deserialize, Serialize};
 
 /// The collection of banks defined for a color organ.
@@ -18,10 +19,15 @@ impl Banks {
     }
 
     /// Next passes the fixture IDs in the next pattern to handler.
-    pub fn next<T: UseFixtureId>(&mut self, handler: T) {
+    pub fn next<T: UseFixtureId>(&mut self, velocity: UnipolarFloat, handler: T) {
         if let Some(bank_id) = self.current_bank {
-            self.banks[bank_id].next(handler);
+            self.banks[bank_id].next(velocity, handler);
         }
+    }
+
+    /// Return the name of the current bank.
+    pub fn current_bank(&self) -> Option<&str> {
+        self.current_bank.map(|id| self.banks[id].name.as_ref())
     }
 }
 
@@ -36,7 +42,8 @@ pub struct Bank {
 
 impl Bank {
     /// Next passes the fixture IDs in the next pattern to handler.
-    pub fn next<T: UseFixtureId>(&mut self, handler: T) {
+    /// Velocity will eventually be used to support velocity bucketing.
+    pub fn next<T: UseFixtureId>(&mut self, _velocity: UnipolarFloat, handler: T) {
         if let Some(sequence_id) = self.current_sequence {
             let has_more = self.sequences[sequence_id].next(handler);
             if !has_more {
@@ -62,7 +69,7 @@ enum PatternSequence {
 impl PatternSequence {
     /// Call handler on each of the fixture IDs in the next pattern.
     /// Return true if this sequence has additional patterns after this one.
-    fn next<T: UseFixtureId>(&mut self, handler: T) -> bool {
+    fn next<T: UseFixtureId>(&mut self, mut handler: T) -> bool {
         use PatternSequence::*;
         match self {
             FixtureSet(fixtures) => {
@@ -84,7 +91,7 @@ struct FixtureRun {
 }
 
 impl FixtureRun {
-    fn next<T: UseFixtureId>(&mut self, handler: T) -> bool {
+    fn next<T: UseFixtureId>(&mut self, mut handler: T) -> bool {
         handler(self.fixtures[self.current_index]);
         if self.current_index == self.fixtures.len() - 1 {
             self.current_index = 0;
@@ -98,6 +105,6 @@ impl FixtureRun {
 
 /// Trait for a closure passed into the current bank, called once with each
 /// fixture ID in the current pattern.
-pub trait UseFixtureId: Fn(FixtureId) {}
+trait UseFixtureId: FnMut(FixtureId) {}
 
-impl<T: Fn(FixtureId)> UseFixtureId for T {}
+impl<T: FnMut(FixtureId)> UseFixtureId for T {}
