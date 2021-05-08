@@ -7,18 +7,13 @@ mod fixture;
 mod organ;
 mod patch;
 mod store;
+mod ui;
 
 use std::{thread::sleep, time::Duration};
 
 use rust_dmx::available_ports;
 
 fn main() {
-    for (name, open) in available_ports() {
-        println!("{}", name);
-        let mut port = open().expect(&format!("failed to open port {}", name));
-        println!("opened {}", port);
-        port.write(&vec![0; 512]).unwrap();
-        sleep(Duration::from_secs(1));
-        port.write(&vec![0; 512]).unwrap();
-    }
+    let app = ui::TemplateApp::default();
+    eframe::run_native(Box::new(app));
 }
