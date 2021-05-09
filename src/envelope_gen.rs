@@ -5,21 +5,20 @@ use number::UnipolarFloat;
 use crate::envelope::EnvelopeParameters;
 use crate::organ::{EmitStateChange as EmitOrganStateChange, StateChange as OrganStateChange};
 
-/// Generate envelope parameters based on higher-level controls.
-/// TODO: envelope shape controls, linear defaults now.
-pub struct EnvelopeGenerator {
-    attack: UnipolarFloat,
-    attack_level: UnipolarFloat,
-    decay: UnipolarFloat,
-    sustain_level: UnipolarFloat,
-    release: UnipolarFloat,
+/// The state of an envelope generator.
+pub struct EnvelopeGeneratorState {
+    pub attack: UnipolarFloat,
+    pub attack_level: UnipolarFloat,
+    pub decay: UnipolarFloat,
+    pub sustain_level: UnipolarFloat,
+    pub release: UnipolarFloat,
     /// The unit of time associated with the envelope paramters.
     /// For example, if attack is 1, it will have this length.
-    time_scale: Duration,
+    pub time_scale: Duration,
 }
 
-impl EnvelopeGenerator {
-    pub fn new() -> Self {
+impl Default for EnvelopeGeneratorState {
+    fn default() -> Self {
         Self {
             attack: UnipolarFloat::ONE,
             attack_level: UnipolarFloat::ZERO,
@@ -27,6 +26,35 @@ impl EnvelopeGenerator {
             sustain_level: UnipolarFloat::ONE,
             release: UnipolarFloat::ONE,
             time_scale: Duration::from_secs(1),
+        }
+    }
+}
+
+impl EnvelopeGeneratorState {
+    /// Update this state with the provided state change.
+    pub fn update_from_state_change(&mut self, sc: &StateChange) {
+        use StateChange::*;
+        match sc {
+            Attack(v) => self.attack = v,
+            AttackLevel(v) => self.attack_level = v,
+            Decay(v) => self.decay = v,
+            SustainLevel(v) => self.sustain_level = v,
+            Release(v) => self.release = v,
+            TimeScale(v) => self.time_scale = v,
+        };
+    }
+}
+
+/// Generate envelope parameters.
+/// TODO: envelope shape controls, linear defaults now.
+pub struct EnvelopeGenerator {
+    state: EnvelopeGeneratorState,
+}
+
+impl EnvelopeGenerator {
+    pub fn new() -> Self {
+        Self {
+            state: EnvelopeGeneratorState::default(),
         }
     }
 
@@ -61,15 +89,7 @@ impl EnvelopeGenerator {
     }
 
     fn handle_state_change<E: EmitStateChange>(&mut self, sc: StateChange, emitter: &mut E) {
-        use StateChange::*;
-        match sc {
-            Attack(v) => self.attack = v,
-            AttackLevel(v) => self.attack_level = v,
-            Decay(v) => self.decay = v,
-            SustainLevel(v) => self.sustain_level = v,
-            Release(v) => self.release = v,
-            TimeScale(v) => self.time_scale = v,
-        };
+        self.update_from_state_change(&sc);
         emitter.emit_envelope_generator_state_change(sc);
     }
 }
