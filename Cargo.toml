@@ -2,7 +2,7 @@
 name = "color_organ"
 version = "0.1.0"
 authors = ["general electrix <general.electrix@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,4 +11,3 @@ serde = { version = "1", features = ["derive"] }
 derive_more = "^0.99"
 number = { git = "https://github.com/generalelectrix/number", branch = "main" }
 log = "^0.4"
-rust_dmx = { git = "https://github.com/generalelectrix/rust-dmx", branch = "modernize" }
