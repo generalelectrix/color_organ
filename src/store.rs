@@ -37,7 +37,7 @@ impl<C: Color> ColorEventStore<C> {
     }
 
     /// Update the state of all the events in this store.
-    pub fn update_state(&mut self, delta_t: Duration) {
+    pub fn update(&mut self, delta_t: Duration) {
         self.clean();
         for event in self.0.iter_mut() {
             if let Some(e) = event.upgrade() {

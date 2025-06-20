@@ -21,7 +21,7 @@ impl Banks {
                 })],
                 current_sequence: Some(0),
             }],
-            current_bank: None,
+            current_bank: Some(0),
         }
     }
 

@@ -66,21 +66,20 @@ impl Envelope {
         let mut envelope = Self {
             value: None,
             parameters,
-            elapsed: Duration::from_secs(0),
+            elapsed: Duration::ZERO,
             released: false,
-            release_elapsed: Duration::from_secs(0),
+            release_elapsed: Duration::ZERO,
         };
         // Initialize value.
         envelope.update_value();
         envelope
     }
 
-    /// Return true if this envelope is released.
-    pub fn released(&self) -> bool {
-        self.released
-    }
-
     /// Set this envelope as released.
+    ///
+    /// Note that this does NOT imply that we have actually started the
+    /// release - we must complete the decay to the sustain level before we
+    /// actually start tracking the release duration.
     pub fn release(&mut self) {
         self.released = true;
     }
@@ -103,7 +102,7 @@ impl Envelope {
             return;
         }
         self.elapsed += delta_t;
-        if self.released {
+        if self.released && self.decay_complete() {
             self.release_elapsed += delta_t;
         }
         self.update_value();
@@ -113,12 +112,17 @@ impl Envelope {
         self.elapsed > self.parameters.attack
     }
 
+    /// Return true if this envelope has completed the decay.
+    pub fn decay_complete(&self) -> bool {
+        self.elapsed > self.parameters.attack + self.parameters.decay
+    }
+
     /// Update the current stored value of this envelope.
     /// Set None if the envelope has closed.
     fn update_value(&mut self) {
-        self.value = if self.elapsed <= self.parameters.attack {
+        self.value = if !self.attack_complete() {
             // attack portion
-            let alpha = if self.parameters.attack == Duration::from_secs(0) {
+            let alpha = if self.parameters.attack.is_zero() {
                 UnipolarFloat::ONE
             } else {
                 UnipolarFloat::new(
@@ -132,7 +136,7 @@ impl Envelope {
             ))
         }
         // decay portion
-        else if self.elapsed <= self.parameters.attack + self.parameters.decay {
+        else if !self.decay_complete() {
             // if decay is 0, we take the attack branch of this function so we
             // do not need to treat decay of 0 explicitly here.
             let decay_elapsed = self.elapsed - self.parameters.attack;

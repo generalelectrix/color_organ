@@ -24,7 +24,7 @@ impl EnvelopeGenerator {
             attack: UnipolarFloat::ONE,
             attack_level: UnipolarFloat::ZERO,
             decay: UnipolarFloat::ONE,
-            sustain_level: UnipolarFloat::ONE,
+            sustain_level: UnipolarFloat::new(0.5),
             release: UnipolarFloat::ONE,
             time_scale: Duration::from_secs(1),
         }

@@ -66,12 +66,12 @@ impl<C: Color> ColorOrgan<C> {
         self.event_store.release(release_id);
     }
 
-    pub fn update_state(&mut self, delta_t: Duration) {
+    pub fn update(&mut self, delta_t: Duration) {
         // update the events
-        self.event_store.update_state(delta_t);
+        self.event_store.update(delta_t);
         // then update the fixtures
         for fixture in self.fixture_state.iter_mut() {
-            fixture.update_state();
+            fixture.update();
         }
     }
 
