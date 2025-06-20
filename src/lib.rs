@@ -8,5 +8,6 @@ mod organ;
 mod store;
 
 pub use color::*;
+pub use event::ReleaseId;
 pub use fixture::FixtureId;
 pub use organ::*;

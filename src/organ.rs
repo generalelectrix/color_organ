@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc, time::Duration};
 
 use log::error;
-use number::UnipolarFloat;
+use number::{Phase, UnipolarFloat};
 
 use crate::{
     bank::Banks,
@@ -32,13 +32,13 @@ impl<C: Color> ColorOrgan<C> {
         Self {
             envelope_gen: EnvelopeGenerator::new(),
             event_store: ColorEventStore::new(),
-            banks: Banks::new(),
+            banks: Banks::new(fixture_count),
             fixture_state: (0..fixture_count).map(|_| Fixture::new()).collect(),
         }
     }
 
-    /// Handle a note on event.
-    pub fn note_on<T: Into<C>>(
+    /// Handle an event that provides a "full" color.
+    pub fn color_on<T: Into<C>>(
         &mut self,
         color: T,
         velocity: UnipolarFloat,
@@ -94,7 +94,7 @@ impl<C: Color> ColorOrgan<C> {
                 color,
                 velocity,
                 release_id,
-            } => self.note_on(color, velocity, release_id),
+            } => self.color_on(color, velocity, release_id),
             NoteOff(release_id) => self.note_off(release_id),
             Blackout => {
                 for fixture in &mut self.fixture_state {

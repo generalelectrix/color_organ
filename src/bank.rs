@@ -11,9 +11,16 @@ pub struct Banks {
 }
 
 impl Banks {
-    pub fn new() -> Self {
+    pub fn new(fixture_count: usize) -> Self {
         Self {
-            banks: Vec::new(),
+            banks: vec![Bank {
+                name: "test".to_string(),
+                sequences: vec![PatternSequence::Run(FixtureRun {
+                    fixtures: (0u32..fixture_count as u32).map(FixtureId).collect(),
+                    current_index: 0,
+                })],
+                current_sequence: Some(0),
+            }],
             current_bank: None,
         }
     }
