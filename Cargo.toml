@@ -8,6 +8,5 @@ edition = "2021"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
-derive_more = "^0.99"
 number = { git = "https://github.com/generalelectrix/number", branch = "main" }
-log = "^0.4"
+log = "0.4"
