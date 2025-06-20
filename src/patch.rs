@@ -2,4 +2,4 @@
 //! a full-fledged patch server.
 use serde::{Deserialize, Serialize};
 #[derive(Hash, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct FixtureId(u32);
+pub struct FixtureId(pub u32);
