@@ -15,11 +15,11 @@ pub trait Color: Clone + Default {
         envelope.map(|e| self.with_envelope(e)).unwrap_or_default()
     }
 
-    /// Perform a weighted interpolation with other color.
+    /// Perform a weighted interpolation towards another color.
     /// The details of the interpolation are left up to the color space.
-    /// The scaling factor should be used to dim the other color, but should not
-    /// impact the brightness contribution of self.
-    fn weighted_interpolation(&self, other: &Self, scale_factor: UnipolarFloat) -> Self;
+    /// alpha is the linear interpolation parameter; alpha = 0 implies we should
+    /// only have self; alpha = 1 implies we should only have other.
+    fn weighted_interpolation(&self, target: &Self, alpha: UnipolarFloat) -> Self;
 }
 
 // #[derive(Clone)]
@@ -44,7 +44,7 @@ pub trait Color: Clone + Default {
 //     }
 // }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 /// A color in the HSLuv space.
 pub struct HsluvColor {
     pub hue: Phase,
@@ -88,14 +88,22 @@ impl Color for HsluvColor {
         copy
     }
 
-    fn weighted_interpolation(&self, other: &Self, scale_factor: UnipolarFloat) -> Self {
-        let lightness = other.lightness * scale_factor + self.lightness;
+    fn weighted_interpolation(&self, target: &Self, alpha: UnipolarFloat) -> Self {
+        // Fade out the intensity of the previous color while allowing the intensity
+        // of the incoming color to come through - select whichever is largest.
+        // Since the incoming color will usually be a upwards-ramping envelope,
+        // this should give us a reasonable transition.
+        let outgoing_lightness = self.lightness * alpha.invert();
+        let lightness = if outgoing_lightness > target.lightness {
+            outgoing_lightness
+        } else {
+            target.lightness
+        };
 
         // interpolate shade in rectangular coordinates
-        let alpha = self.lightness.val() / lightness.val();
-        let ((x_self, y_self), (x_other, y_other)) = (self.rect(), other.rect());
-        let x = lerp(x_other, x_self, alpha);
-        let y = lerp(y_other, y_self, alpha);
+        let ((x_current, y_current), (x_target, y_target)) = (self.rect(), target.rect());
+        let x = lerp(x_current, x_target, alpha.val());
+        let y = lerp(y_current, y_target, alpha.val());
         let (saturation, hue) = polar(x, y);
         Self {
             hue,
@@ -109,11 +117,34 @@ impl Color for HsluvColor {
 /// Convert rectangular coordinates into polar coordinates.
 fn polar(x: f64, y: f64) -> (f64, Phase) {
     let r = (x.powi(2) + y.powi(2)).sqrt();
-    let theta = Phase::new((y / x).atan() / TWOPI);
-    (r, theta)
+    let mut theta = (y / x).atan() / TWOPI;
+    if x < 0. {
+        theta += 0.5;
+    }
+    (r, Phase::new(theta))
 }
 
 /// Linear interpolation.
 fn lerp(v_old: f64, v_new: f64, alpha: f64) -> f64 {
     alpha * v_new + (1. - alpha) * v_old
+}
+
+#[cfg(test)]
+mod test {
+    use number::{Phase, UnipolarFloat};
+
+    use crate::{Color, HsluvColor};
+
+    #[test]
+    fn test_interpolation() {
+        // Interpolating a color with itself should always produce the same result.
+        let c = HsluvColor::new(Phase::new(0.3), UnipolarFloat::ONE, UnipolarFloat::new(0.3));
+
+        assert_eq!(c.weighted_interpolation(&c.clone(), UnipolarFloat::ZERO), c);
+        assert_eq!(c.weighted_interpolation(&c.clone(), UnipolarFloat::ONE), c);
+        assert_eq!(
+            c.weighted_interpolation(&c.clone(), UnipolarFloat::new(0.5)),
+            c
+        );
+    }
 }

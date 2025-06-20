@@ -68,10 +68,13 @@ impl<C: Color> Fixture<C> {
             .rev()
             .fold(None, |color_accum, event| match color_accum {
                 None => Some(event.borrow().value().clone()),
-                Some(color) => {
+                Some(color_accum) => {
                     let e = event.borrow();
-                    Some(e.value().weighted_interpolation(
-                        &color,
+                    if e.envelope().attack_complete() {
+                        return Some(e.value().clone());
+                    }
+                    Some(color_accum.weighted_interpolation(
+                        e.value(),
                         e.envelope().value().unwrap_or(UnipolarFloat::ZERO),
                     ))
                 }

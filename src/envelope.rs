@@ -84,6 +84,11 @@ impl Envelope {
         self.released = true;
     }
 
+    /// Return true if this envelope has been released.
+    pub fn released(&self) -> bool {
+        self.released
+    }
+
     /// Return true if this envelope has closed.
     pub fn closed(&self) -> bool {
         self.value.is_none()
