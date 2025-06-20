@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     color::Color,
-    event::{ColorEvent, ReleaseID},
+    event::{ColorEvent, ReleaseId},
 };
 
 /// A strong reference to a color event.
@@ -28,7 +28,7 @@ impl<C: Color> ColorEventStore<C> {
     }
 
     /// Release all events with the given release ID.
-    pub fn release(&mut self, release_id: ReleaseID) {
+    pub fn release(&mut self, release_id: ReleaseId) {
         for event in self.0.iter() {
             if let Some(e) = event.upgrade() {
                 e.borrow_mut().release(release_id);
@@ -63,7 +63,7 @@ mod test {
 
     use super::*;
 
-    fn mkevent(release_id: ReleaseID) -> ColorEventStrong<HsluvColor> {
+    fn mkevent(release_id: ReleaseId) -> ColorEventStrong<HsluvColor> {
         Rc::new(RefCell::new(ColorEvent::new(
             color(),
             envelope(),

@@ -11,11 +11,14 @@ use crate::{
     event::ColorEvent,
     fixture::{Fixture, FixtureId},
     store::ColorEventStore,
+    HsluvColor,
 };
 use crate::{
     envelope_gen::{ControlMessage as EnvelopeControlMessage, StateChange as EnvelopeStateChange},
-    event::ReleaseID,
+    event::ReleaseId,
 };
+
+pub type ColorOrganHsluv = ColorOrgan<HsluvColor>;
 
 pub struct ColorOrgan<C: Color> {
     envelope_gen: EnvelopeGenerator,
@@ -35,9 +38,14 @@ impl<C: Color> ColorOrgan<C> {
     }
 
     /// Handle a note on event.
-    pub fn note_on(&mut self, color: C, velocity: UnipolarFloat, release_id: ReleaseID) {
+    pub fn note_on<T: Into<C>>(
+        &mut self,
+        color: T,
+        velocity: UnipolarFloat,
+        release_id: ReleaseId,
+    ) {
         let event = Rc::new(RefCell::new(ColorEvent::new(
-            color,
+            color.into(),
             Envelope::new(self.envelope_gen.generate()),
             release_id,
         )));
@@ -54,7 +62,7 @@ impl<C: Color> ColorOrgan<C> {
 
     /// Handle a note off event.
     /// Release all of the notes with the given release ID.
-    pub fn note_off(&mut self, release_id: ReleaseID) {
+    pub fn note_off(&mut self, release_id: ReleaseId) {
         self.event_store.release(release_id);
     }
 
@@ -74,26 +82,52 @@ impl<C: Color> ColorOrgan<C> {
         self.fixture_state.get(id.0 as usize).map(Fixture::render)
     }
 
-    pub fn emit_state<E: EmitStateChange>(&self, emitter: &mut E) {
+    pub fn emit_state<E: EmitStateChange>(&self, emitter: &E) {
         self.envelope_gen.emit_state(emitter);
     }
 
-    pub fn control<E: EmitStateChange>(&mut self, msg: ControlMessage, emitter: &mut E) {
+    pub fn control<E: EmitStateChange, T: Into<C>>(&mut self, msg: ControlMessage<T>, emitter: &E) {
         use ControlMessage::*;
         match msg {
             Envelope(em) => self.envelope_gen.control(em, emitter),
+            NoteOn {
+                color,
+                velocity,
+                release_id,
+            } => self.note_on(color, velocity, release_id),
+            NoteOff(release_id) => self.note_off(release_id),
+            Blackout => {
+                for fixture in &mut self.fixture_state {
+                    fixture.clear();
+                }
+            }
         }
     }
 }
 
 pub trait EmitStateChange {
-    fn emit_state_change(&mut self, sc: StateChange);
+    fn emit_state_change(&self, sc: StateChange);
 }
 
-pub enum ControlMessage {
+#[derive(Clone, Debug)]
+pub enum ControlMessage<C> {
     Envelope(EnvelopeControlMessage),
+    NoteOn {
+        color: C,
+        velocity: UnipolarFloat,
+        release_id: ReleaseId,
+    },
+    NoteOff(ReleaseId),
+    /// Clear all fixture state, creating an instant blackout.
+    Blackout,
 }
 
 pub enum StateChange {
     Envelope(EnvelopeStateChange),
+}
+
+pub struct IgnoreEmitter;
+
+impl EmitStateChange for IgnoreEmitter {
+    fn emit_state_change(&self, _sc: StateChange) {}
 }

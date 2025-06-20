@@ -42,7 +42,7 @@ impl EnvelopeGenerator {
     }
 
     /// Emit all observable state using the provided emitter.
-    pub fn emit_state<E: EmitStateChange>(&self, emitter: &mut E) {
+    pub fn emit_state<E: EmitStateChange>(&self, emitter: &E) {
         use StateChange::*;
         emitter.emit_envelope_generator_state_change(Attack(self.attack));
         emitter.emit_envelope_generator_state_change(AttackLevel(self.attack_level));
@@ -53,14 +53,14 @@ impl EnvelopeGenerator {
     }
 
     /// Handle a control message.
-    pub fn control<E: EmitStateChange>(&mut self, msg: ControlMessage, emitter: &mut E) {
+    pub fn control<E: EmitStateChange>(&mut self, msg: ControlMessage, emitter: &E) {
         use ControlMessage::*;
         match msg {
             Set(sc) => self.handle_state_change(sc, emitter),
         }
     }
 
-    fn handle_state_change<E: EmitStateChange>(&mut self, sc: StateChange, emitter: &mut E) {
+    fn handle_state_change<E: EmitStateChange>(&mut self, sc: StateChange, emitter: &E) {
         use StateChange::*;
         match sc {
             Attack(v) => self.attack = v,
@@ -74,10 +74,12 @@ impl EnvelopeGenerator {
     }
 }
 
+#[derive(Clone, Debug)]
 pub enum ControlMessage {
     Set(StateChange),
 }
 
+#[derive(Clone, Debug)]
 pub enum StateChange {
     Attack(UnipolarFloat),
     AttackLevel(UnipolarFloat),
@@ -88,11 +90,11 @@ pub enum StateChange {
 }
 
 pub trait EmitStateChange {
-    fn emit_envelope_generator_state_change(&mut self, sc: StateChange);
+    fn emit_envelope_generator_state_change(&self, sc: StateChange);
 }
 
 impl<T: EmitOrganStateChange> EmitStateChange for T {
-    fn emit_envelope_generator_state_change(&mut self, sc: StateChange) {
+    fn emit_envelope_generator_state_change(&self, sc: StateChange) {
         self.emit_state_change(OrganStateChange::Envelope(sc));
     }
 }

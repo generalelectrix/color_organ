@@ -7,13 +7,13 @@ pub struct ColorEvent<C: Color> {
     /// The color this event is initialized with.
     color: C,
     envelope: Envelope,
-    release_id: ReleaseID,
+    release_id: ReleaseId,
     /// The current enveloped color.
     value: C,
 }
 
 impl<C: Color> ColorEvent<C> {
-    pub fn new(color: C, envelope: Envelope, release_id: ReleaseID) -> Self {
+    pub fn new(color: C, envelope: Envelope, release_id: ReleaseId) -> Self {
         let mut event = Self {
             color,
             envelope,
@@ -25,7 +25,7 @@ impl<C: Color> ColorEvent<C> {
     }
 
     /// Release the envelope in this event if the release ID matches the provided one.
-    pub fn release(&mut self, release_id: ReleaseID) {
+    pub fn release(&mut self, release_id: ReleaseId) {
         if self.release_id == release_id {
             self.envelope.release();
         }
@@ -57,4 +57,4 @@ impl<C: Color> ColorEvent<C> {
 /// existing running color events.  For midi inputs, this is the same as the
 /// midi note.  For other organ inputs, this may be an ID managed by the
 /// color event source.
-pub type ReleaseID = i32;
+pub type ReleaseId = u32;

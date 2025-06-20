@@ -26,6 +26,11 @@ impl<C: Color> Fixture<C> {
         }
     }
 
+    /// Clear all events from the buffer.
+    pub fn clear(&mut self) {
+        self.event_buffer.clear();
+    }
+
     pub fn add_event(&mut self, event: ColorEventStrong<C>) {
         self.event_buffer.push_front(event);
     }
