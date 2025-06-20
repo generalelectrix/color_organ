@@ -5,16 +5,14 @@ use number::{Phase, UnipolarFloat};
 const TWOPI: f64 = 2.0 * PI;
 
 /// A trait for a color in a particular color space.
-pub trait Color: Sized + Clone {
-    const BLACK: Self;
-
+///
+/// The default value for the type should correspond to black.
+pub trait Color: Sized + Clone + Default {
     fn with_envelope(&self, envelope: UnipolarFloat) -> Self;
 
     /// Return the color with the given envelope applied.
     fn enveloped(&self, envelope: Option<UnipolarFloat>) -> Self {
-        envelope
-            .map(|e| self.with_envelope(e))
-            .unwrap_or(Self::BLACK)
+        envelope.map(|e| self.with_envelope(e)).unwrap_or_default()
     }
 
     /// Perform a weighted interpolation with other color.
@@ -56,6 +54,12 @@ pub struct HsluvColor {
     rect: Cell<Option<(f64, f64)>>,
 }
 
+impl Default for HsluvColor {
+    fn default() -> Self {
+        Self::new(Phase::ZERO, UnipolarFloat::ONE, UnipolarFloat::ZERO)
+    }
+}
+
 impl HsluvColor {
     pub fn new(hue: Phase, saturation: UnipolarFloat, lightness: UnipolarFloat) -> Self {
         Self {
@@ -78,13 +82,6 @@ impl HsluvColor {
 }
 
 impl Color for HsluvColor {
-    const BLACK: Self = Self {
-        hue: Phase::ZERO,
-        saturation: UnipolarFloat::ONE,
-        lightness: UnipolarFloat::ZERO,
-        rect: Cell::new(Some((0., 0.))),
-    };
-
     fn with_envelope(&self, envelope: UnipolarFloat) -> Self {
         let mut copy = self.clone();
         copy.lightness *= envelope;

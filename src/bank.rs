@@ -105,6 +105,6 @@ impl FixtureRun {
 
 /// Trait for a closure passed into the current bank, called once with each
 /// fixture ID in the current pattern.
-trait UseFixtureId: FnMut(FixtureId) {}
+pub trait UseFixtureId: FnMut(FixtureId) {}
 
 impl<T: FnMut(FixtureId)> UseFixtureId for T {}

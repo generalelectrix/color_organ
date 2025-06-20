@@ -98,7 +98,6 @@ pub enum ControlMessage {
 pub enum StateChange {
     Envelope(EnvelopeStateChange),
 }
-
-trait EmitFixtureColor<C: Color>: FnMut(FixtureId, C) {}
+pub trait EmitFixtureColor<C: Color>: FnMut(FixtureId, C) {}
 
 impl<T: FnMut(FixtureId, C), C: Color> EmitFixtureColor<C> for T {}

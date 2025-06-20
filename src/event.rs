@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-
 use crate::{color::Color, envelope::Envelope};
 
 /// A color, shaped by an envelope, including envelope evolution state.
@@ -19,7 +18,7 @@ impl<C: Color> ColorEvent<C> {
             color,
             envelope,
             release_id,
-            value: C::BLACK,
+            value: Default::default(),
         };
         event.update_value();
         event

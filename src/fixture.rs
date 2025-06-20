@@ -66,6 +66,6 @@ impl<C: Color> Fixture<C> {
                     ))
                 }
             })
-            .unwrap_or(C::BLACK)
+            .unwrap_or_default()
     }
 }
