@@ -1,4 +1,4 @@
-use std::{collections::btree_set::Union, time::Duration};
+use std::time::Duration;
 
 use number::UnipolarFloat;
 

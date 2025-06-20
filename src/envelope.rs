@@ -1,7 +1,5 @@
-use derive_more::Display;
-use log::error;
 use number::UnipolarFloat;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 /// A function defining the shape of an envelope transition edge.
 /// EdgeShapes should always map 0 to 0 and 1 to 1, but may provide any other

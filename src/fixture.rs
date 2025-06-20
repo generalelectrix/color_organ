@@ -29,7 +29,7 @@ impl<C: Color> Fixture<C> {
     /// Drop all events that the fixture is no longer responding to.
     pub fn update_state(&mut self) {
         // Short-circuit if the event buffer is empty.
-        if self.event_buffer.len() == 0 {
+        if self.event_buffer.is_empty() {
             return;
         }
         // If an event has completed its attack, all older events are no longer relevant.

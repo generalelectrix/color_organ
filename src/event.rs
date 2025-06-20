@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use number::UnipolarFloat;
 
 use crate::{color::Color, envelope::Envelope};
 

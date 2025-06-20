@@ -18,6 +18,12 @@ pub struct ColorOrgan<C: Color> {
     fixture_state: HashMap<FixtureId, Fixture<C>>,
 }
 
+impl<C: Color> Default for ColorOrgan<C> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<C: Color> ColorOrgan<C> {
     pub fn new() -> Self {
         Self {

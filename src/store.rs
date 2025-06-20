@@ -1,10 +1,7 @@
-use derive_more::Display;
-use log::error;
-use number::UnipolarFloat;
 use std::{
     cell::RefCell,
     rc::{Rc, Weak},
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 use crate::{
@@ -57,10 +54,10 @@ impl<C: Color> ColorEventStore<C> {
 
 #[cfg(test)]
 mod test {
-    use number::Phase;
+    use number::{Phase, UnipolarFloat};
 
     use crate::{
-        color::{Color, HsluvColor},
+        color::HsluvColor,
         envelope::{Envelope, EnvelopeParameters},
     };
 
