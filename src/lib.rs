@@ -4,6 +4,9 @@ mod envelope;
 mod envelope_gen;
 mod event;
 mod fixture;
-pub mod organ;
-mod patch;
+mod organ;
 mod store;
+
+pub use color::*;
+pub use fixture::FixtureId;
+pub use organ::*;

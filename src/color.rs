@@ -7,7 +7,7 @@ const TWOPI: f64 = 2.0 * PI;
 /// A trait for a color in a particular color space.
 ///
 /// The default value for the type should correspond to black.
-pub trait Color: Sized + Clone + Default {
+pub trait Color: Clone + Default {
     fn with_envelope(&self, envelope: UnipolarFloat) -> Self;
 
     /// Return the color with the given envelope applied.

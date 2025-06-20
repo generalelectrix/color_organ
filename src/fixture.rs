@@ -1,9 +1,14 @@
 //! Models for fixtures that can receieve color events.
-
+//! TODO: we really don't need to call these fixtures. Too overloaded of a term.
+//! Should come up with something better, perhaps `Target`.
 use number::UnipolarFloat;
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 
 use crate::{color::Color, store::ColorEventStrong};
+
+#[derive(Hash, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct FixtureId(pub u32);
 
 /// A fixture that can receive color organ events.
 /// Stores a buffer of color events it is listening to, and knows how to

@@ -4,8 +4,13 @@ use log::error;
 use number::UnipolarFloat;
 
 use crate::{
-    bank::Banks, color::Color, envelope::Envelope, envelope_gen::EnvelopeGenerator,
-    event::ColorEvent, fixture::Fixture, patch::FixtureId, store::ColorEventStore,
+    bank::Banks,
+    color::Color,
+    envelope::Envelope,
+    envelope_gen::EnvelopeGenerator,
+    event::ColorEvent,
+    fixture::{Fixture, FixtureId},
+    store::ColorEventStore,
 };
 use crate::{
     envelope_gen::{ControlMessage as EnvelopeControlMessage, StateChange as EnvelopeStateChange},
@@ -65,7 +70,7 @@ impl<C: Color> ColorOrgan<C> {
     /// Get the current color for a specific fixture by ID.
     ///
     /// Return None if the ID is out of range.
-    pub fn render<R: EmitFixtureColor<C>>(&self, id: FixtureId) -> Option<C> {
+    pub fn render(&self, id: FixtureId) -> Option<C> {
         self.fixture_state.get(id.0 as usize).map(Fixture::render)
     }
 
@@ -92,6 +97,3 @@ pub enum ControlMessage {
 pub enum StateChange {
     Envelope(EnvelopeStateChange),
 }
-pub trait EmitFixtureColor<C: Color>: FnMut(FixtureId, C) {}
-
-impl<T: FnMut(FixtureId, C), C: Color> EmitFixtureColor<C> for T {}

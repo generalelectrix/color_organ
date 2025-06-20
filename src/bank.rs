@@ -1,4 +1,4 @@
-use crate::patch::FixtureId;
+use crate::fixture::FixtureId;
 
 use number::UnipolarFloat;
 use serde::{Deserialize, Serialize};
